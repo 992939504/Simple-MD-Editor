@@ -19,6 +19,7 @@ A lightweight yet powerful browser-based Markdown editor built with pure HTML, C
 
 ## ✨ Features | 功能亮点
 
+-   **📄 导出为 PDF (Export to PDF)**: 一键将您精心排版的文档导出为高质量的 PDF 文件，非常适合用于制作报告、简历或进行正式的分享。
 -   **✍️ 实时预览 (Real-time Preview)**: 在您输入 Markdown 文本的同时，右侧会即时渲染出对应的 HTML 效果。
 -   **🎨 多主题切换 (Multiple Themes)**: 内置多种精心设计的主题，满足不同场景和心情下的写作需求。
     -   ✅ **白天模式 (Default)**
@@ -26,11 +27,7 @@ A lightweight yet powerful browser-based Markdown editor built with pure HTML, C
     -   ✅ **蓝色模式 (Blue)**
     -   ✅ **赛博朋克 (Cyberpunk)**
 -   **💾 本地持久化 (Local Persistence)**: 您的写作内容会自动保存到浏览器的本地存储中，刷新页面或下次访问时不会丢失。
--   **📂 文件操作 (File Operations)**:
-    -   **导入**: 轻松从本地导入 `.md` 文件并开始编辑。
-    -   **导出**:
-        -   将您的作品导出为标准的 `.md` 文件。
-        -   将渲染后的预览内容导出为 `.pdf` 文件，方便分享和打印。
+-   **📂 文件导入/导出 (File Import/Export)**: 支持从本地导入 Markdown 文件，也可以将您的作品保存为 `.md` 文件。
 -   **↔️ 响应式布局 (Responsive Layout)**: 简洁的设计能够自适应桌面和移动设备，随时随地进行创作。
 -   **👁️ 视图切换 (View Toggling)**: 可以灵活地隐藏编辑区或预览区，以便专注于写作或审阅。
 -   **📘 内置指南 (Built-in Guide)**: 集成了一个方便的 Markdown 语法指南，供您随时查阅。
@@ -85,4 +82,3 @@ A lightweight yet powerful browser-based Markdown editor built with pure HTML, C
 ## 📄 License | 许可证
 
 该项目采用 MIT 许可证。详情请参阅 [LICENSE](https://github.com/992939504/Simple-MD-Editor/blob/main/LICENSE) 文件。
-```
