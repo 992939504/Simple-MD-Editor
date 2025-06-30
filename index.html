@@ -16,10 +16,10 @@
             /* 默认主题（白天模式） */
             --bg-color: #f5f5f5;
             --text-color: #333;
-            --header-bg: #2c3e50;
-            --header-text: white;
-            --button-bg: #3498db;
-            --button-hover: #2980b9;
+            --header-bg: #fff;
+            --header-text: #333;
+            --button-bg: #c4c4c4;
+            --button-hover: #939393;
             --editor-bg: #fff;
             --border-color: #ddd;
             --code-bg: #f6f8fa;
@@ -110,7 +110,7 @@
         }
 
         header h1 {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
             margin: 0;
         }
 
@@ -214,6 +214,14 @@
         .editor-container {
             background-color: var(--editor-bg);
             border-right: 1px solid var(--border-color);
+            /* 保持与.preview-container一致，无多余样式 */
+            border-radius: 0;
+            padding: 1rem;
+        }
+
+        .preview-container {
+            background-color: var(--editor-bg);
+            padding: 1rem;
         }
 
         #editor {
@@ -224,24 +232,20 @@
             font-family: 'Consolas', monospace;
             font-size: 16px;
             line-height: 1.6;
-            padding: 10px;
+            padding: 4px 10px;
             outline: none;
             background-color: transparent;
             color: var(--text-color);
         }
 
-        .preview-container {
-            background-color: var(--editor-bg);
+        #editor::-webkit-scrollbar {
+            height: 6px;
+            width: 0 !important;
+            background: transparent;
         }
-
-        main.preview-hidden .preview-container,
-        main.editor-hidden .editor-container {
-            display: none;
-        }
-
-        main.preview-hidden .editor-container,
-        main.editor-hidden .editor-container {
-            border-right: none;
+        #editor {
+            scrollbar-width: thin; /* Firefox */
+            -ms-overflow-style: none; /* IE 10+ */
         }
 
         .markdown-body {
@@ -262,6 +266,17 @@
         .markdown-body table { border-collapse: collapse; margin-bottom: 1rem; display: block; overflow: auto; width: 100%; }
         .markdown-body th, .markdown-body td { padding: 6px 13px; border: 1px solid var(--border-color); }
 
+        .editor-container::-webkit-scrollbar,
+        .preview-container::-webkit-scrollbar {
+            width: 0 !important;
+            background: transparent;
+        }
+        .editor-container,
+        .preview-container {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE 10+ */
+        }
+
         @media (max-width: 768px) {
             header { flex-direction: column; gap: 1rem; }
             main { flex-direction: column; }
@@ -269,6 +284,21 @@
             .editor-container { border-right: none; border-bottom: 1px solid var(--border-color); }
             main.preview-hidden .editor-container,
             main.editor-hidden .preview-container { height: 100%; border-bottom: none; }
+        }
+
+        .sync-scroll-toggle {
+            display: flex;
+            align-items: center;
+            margin-left: 18px;
+            font-size: 13px;
+            color: var(--header-text);
+            user-select: none;
+        }
+        .sync-scroll-toggle input[type="checkbox"] {
+            accent-color: var(--button-bg);
+            margin-right: 4px;
+            width: 16px;
+            height: 16px;
         }
     </style>
 </head>
@@ -285,6 +315,7 @@
                     <button class="dropdown-toggle">导出</button>
                     <div id="export-menu" class="dropdown-menu">
                         <button id="exportBtn">导出 MD</button>
+                        <button id="exportHtmlBtn">导出 HTML</button>
                         <button id="exportPdfBtn">导出 PDF</button>
                     </div>
                 </div>
@@ -308,6 +339,11 @@
                         <option value="cyberpunk">赛博朋克</option>
                     </select>
                 </div>
+                <!-- 同步滚动开关 -->
+                <label class="sync-scroll-toggle" title="编辑区滚动时预览区也跟随滚动">
+                    <input type="checkbox" id="syncScrollToggle" checked>
+                    同步滚动
+                </label>
             </div>
         </header>
         <main>
@@ -331,11 +367,13 @@
             const editor = document.getElementById('editor');
             const preview = document.getElementById('preview');
             const mainContainer = document.querySelector('main');
+            const syncScrollToggle = document.getElementById('syncScrollToggle');
 
             // 工具栏按钮
             const saveBtn = document.getElementById('saveBtn');
             const importBtn = document.getElementById('importBtn');
             const exportBtn = document.getElementById('exportBtn');
+            const exportHtmlBtn = document.getElementById('exportHtmlBtn');
             const exportPdfBtn = document.getElementById('exportPdfBtn');
             const toggleEditorBtn = document.getElementById('toggleEditorBtn');
             const togglePreviewBtn = document.getElementById('togglePreviewBtn');
@@ -423,6 +461,19 @@
                 URL.revokeObjectURL(url);
             });
             
+            exportHtmlBtn.addEventListener('click', () => {
+                const filename = getFilename() + '.html';
+                // 构造完整HTML文档
+                const htmlContent = `<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<meta charset=\"UTF-8\">\n<title>${filename}</title>\n<style>${document.querySelector('style').innerHTML}</style>\n</head>\n<body>\n<div class=\"markdown-body\">${preview.innerHTML}</div>\n</body>\n</html>`;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
             exportPdfBtn.addEventListener('click', async () => {
                 const btn = exportPdfBtn;
                 btn.disabled = true;
@@ -614,6 +665,25 @@ ___
                 if (!event.target.matches('.dropdown-toggle')) {
                     closeAllDropdowns();
                 }
+            });
+
+            // --- 同步滚动功能 ---
+            let isSyncScroll = true;
+            let isPreviewScrolling = false;
+            syncScrollToggle.addEventListener('change', function() {
+                isSyncScroll = this.checked;
+            });
+            editor.addEventListener('scroll', function() {
+                if (!isSyncScroll) return;
+                if (isPreviewScrolling) return;
+                const editorScroll = editor.scrollTop;
+                const editorHeight = editor.scrollHeight - editor.clientHeight;
+                const percent = editorHeight > 0 ? editorScroll / editorHeight : 0;
+                const previewContainer = preview.parentElement;
+                const previewHeight = previewContainer.scrollHeight - previewContainer.clientHeight;
+                isPreviewScrolling = true;
+                previewContainer.scrollTop = percent * previewHeight;
+                setTimeout(() => { isPreviewScrolling = false; }, 10);
             });
         });
     </script>
