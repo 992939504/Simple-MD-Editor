@@ -4,618 +4,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown 实时编辑器</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            /* 默认主题（白天模式） */
-            --bg-color: #f5f5f5;
-            --text-color: #333;
-            --header-bg: #2c3e50;
-            --header-text: white;
-            --button-bg: #3498db;
-            --button-hover: #2980b9;
-            --editor-bg: #fff;
-            --border-color: #ddd;
-            --code-bg: #f6f8fa;
-            --blockquote-color: #6a737d;
-            --blockquote-border: #dfe2e5;
-            --dropdown-bg: #fff;
-            --dropdown-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            --dropdown-hover-bg: #f1f1f1;
-        }
-
-        /* 黑夜模式 */
-        body.theme-dark {
-            --bg-color: #1a1a1a;
-            --text-color: #e0e0e0;
-            --header-bg: #121212;
-            --header-text: #f0f0f0;
-            --button-bg: #2c3e50;
-            --button-hover: #34495e;
-            --editor-bg: #2d2d2d;
-            --border-color: #444;
-            --code-bg: #383838;
-            --blockquote-color: #aaa;
-            --blockquote-border: #666;
-            --dropdown-bg: #3e3e3e;
-            --dropdown-shadow: 0 8px 16px rgba(0,0,0,0.3);
-            --dropdown-hover-bg: #555;
-        }
-
-        /* 蓝色模式 */
-        body.theme-blue {
-            --bg-color: #e8f4f8;
-            --text-color: #2c3e50;
-            --header-bg: #1e88e5;
-            --header-text: white;
-            --button-bg: #0d47a1;
-            --button-hover: #1565c0;
-            --editor-bg: #f1f8fe;
-            --border-color: #bbdefb;
-            --code-bg: #e3f2fd;
-            --blockquote-color: #546e7a;
-            --blockquote-border: #64b5f6;
-            --dropdown-bg: #ffffff;
-            --dropdown-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            --dropdown-hover-bg: #e3f2fd;
-        }
-
-        /* 赛博朋克模式 */
-        body.theme-cyberpunk {
-            --bg-color: #0a0a16;
-            --text-color: #f0f2f5;
-            --header-bg: #120458;
-            --header-text: #00ff9f;
-            --button-bg: #9900ff;
-            --button-hover: #b14aff;
-            --editor-bg: #1a1a2e;
-            --border-color: #ff00ff;
-            --code-bg: #2d1b54;
-            --blockquote-color: #00fff9;
-            --blockquote-border: #ff00ff;
-            --dropdown-bg: #1a1a2e;
-            --dropdown-shadow: 0 5px 15px rgba(255, 0, 255, 0.3);
-            --dropdown-hover-bg: #2d1b54;
-        }
-
-        body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 100%;
-            margin: 0 auto;
-        }
-
-        header {
-            background-color: var(--header-bg);
-            color: var(--header-text);
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header h1 {
-            font-size: 1.5rem;
-            margin: 0;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        button {
-            background-color: var(--button-bg);
-            color: var(--header-text);
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: var(--button-hover);
-        }
-        
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-
-        /* --- Dropdown Menu Styles --- */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            background-color: var(--dropdown-bg);
-            min-width: 160px;
-            box-shadow: var(--dropdown-shadow);
-            z-index: 1;
-            border-radius: 4px;
-            padding: 5px 0;
-            margin-top: 5px;
-        }
-
-        .dropdown-menu button {
-            color: var(--text-color);
-            background-color: transparent;
-            padding: 10px 15px;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-            text-align: left;
-            border-radius: 0;
-        }
-
-        .dropdown-menu button:hover {
-            background-color: var(--dropdown-hover-bg);
-        }
-
-        .dropdown-menu.show {
-            display: block;
-        }
-        /* --- End Dropdown Styles --- */
-
-        .theme-selector {
-            margin-left: 10px;
-        }
-
-        #themeSelector {
-            padding: 6px 10px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-            background-color: var(--editor-bg);
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 14px;
-            outline: none;
-        }
-
-        main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .editor-container,
-        .preview-container {
-            flex: 1;
-            padding: 1rem;
-            overflow-y: auto;
-            height: 100%;
-            transition: flex 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            min-width: 0;
-        }
-
-        .editor-container {
-            background-color: var(--editor-bg);
-            border-right: 1px solid var(--border-color);
-        }
-
-        #editor {
-            width: 100%;
-            height: 100%;
-            border: none;
-            resize: none;
-            font-family: 'Consolas', monospace;
-            font-size: 16px;
-            line-height: 1.6;
-            padding: 10px;
-            outline: none;
-            background-color: transparent;
-            color: var(--text-color);
-        }
-
-        .preview-container {
-            background-color: var(--editor-bg);
-        }
-
-        main.preview-hidden .preview-container,
-        main.editor-hidden .editor-container {
-            display: none;
-        }
-
-        main.preview-hidden .editor-container,
-        main.editor-hidden .editor-container {
-            border-right: none;
-        }
-
-        .markdown-body {
-            padding: 10px;
-            line-height: 1.6;
-        }
-
-        .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { margin-top: 1.5rem; margin-bottom: 1rem; font-weight: 600; line-height: 1.25; }
-        .markdown-body h1 { font-size: 2em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
-        .markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
-        .markdown-body p { margin-top: 0; margin-bottom: 1rem; }
-        .markdown-body blockquote { padding: 0 1em; color: var(--blockquote-color); border-left: 0.25em solid var(--blockquote-border); margin: 0 0 1rem 0; }
-        .markdown-body pre { background-color: var(--code-bg); border-radius: 3px; padding: 16px; overflow: auto; margin-bottom: 1rem; }
-        .markdown-body pre code { padding: 0; background-color: transparent; }
-        .markdown-body code { font-family: 'Consolas', monospace; background-color: var(--code-bg); padding: 0.2em 0.4em; border-radius: 3px; }
-        .markdown-body img { max-width: 100%; }
-        .markdown-body ul, .markdown-body ol { padding-left: 2em; margin-bottom: 1rem; }
-        .markdown-body table { border-collapse: collapse; margin-bottom: 1rem; display: block; overflow: auto; width: 100%; }
-        .markdown-body th, .markdown-body td { padding: 6px 13px; border: 1px solid var(--border-color); }
-
-        @media (max-width: 768px) {
-            header { flex-direction: column; gap: 1rem; }
-            main { flex-direction: column; }
-            .editor-container, .preview-container { flex: none; height: 50%; width: 100%; }
-            .editor-container { border-right: none; border-bottom: 1px solid var(--border-color); }
-            main.preview-hidden .editor-container,
-            main.editor-hidden .preview-container { height: 100%; border-bottom: none; }
-        }
-    </style>
+    <title>Markdown Editor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>Markdown 实时编辑器</h1>
-            <div class="toolbar">
+    <!-- 背景图片容器 -->
+    <div class="app-bg-container" id="bgContainer">
+        <img id="bgImage" class="app-bg-image" style="display: none;">
+    </div>
+
+    <div class="app-container">
+        <!-- 头部导航 -->
+        <header class="app-header">
+            <div class="app-title">
+                <span class="app-icon">📝</span>
+                <span>Markdown Editor</span>
+            </div>
+            <div class="toolbar-actions">
                 <!-- 文件操作 -->
-                <button id="saveBtn">保存</button>
-                <button id="importBtn">导入 MD</button>
+                <button class="btn btn-icon" id="saveBtn" title="保存">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                </button>
+                <button class="btn btn-icon" id="importBtn" title="导入">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </button>
+
+                <!-- 导出菜单 -->
                 <div class="dropdown">
-                    <button class="dropdown-toggle">导出</button>
-                    <div id="export-menu" class="dropdown-menu">
-                        <button id="exportBtn">导出 MD</button>
-                        <button id="exportPdfBtn">导出 PDF</button>
+                    <button class="btn btn-icon" id="exportToggle" title="导出">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </button>
+                    <div id="exportMenu" class="dropdown-menu">
+                        <button class="dropdown-item" id="exportBtn">
+                            <span class="dropdown-icon">📄</span>
+                            导出 MD
+                        </button>
+                        <button class="dropdown-item" id="exportHtmlBtn">
+                            <span class="dropdown-icon">🌐</span>
+                            导出网页
+                        </button>
+                        <button class="dropdown-item" id="exportPdfBtn">
+                            <span class="dropdown-icon">📋</span>
+                            导出 PDF
+                        </button>
                     </div>
                 </div>
 
-                <!-- 视图选项 -->
-                <div class="dropdown">
-                    <button class="dropdown-toggle">视图</button>
-                    <div id="view-menu" class="dropdown-menu">
-                        <button id="toggleEditorBtn">切换编辑区</button>
-                        <button id="togglePreviewBtn">切换预览区</button>
-                        <button id="mdGuideBtn">Markdown 指南</button>
-                    </div>
-                </div>
+                <!-- 分隔线 -->
+                <div class="toolbar-divider"></div>
+
+                <!-- 视图控制 -->
+                <button class="btn btn-icon" id="toggleEditorBtn" title="切换编辑区">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                    </svg>
+                </button>
+                <button class="btn btn-icon" id="togglePreviewBtn" title="切换预览区">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="9" x2="15" y2="9"/>
+                        <line x1="9" y1="13" x2="15" y2="13"/>
+                        <line x1="9" y1="17" x2="11" y2="17"/>
+                    </svg>
+                </button>
+                <button class="btn btn-icon" id="mdGuideBtn" title="Markdown 指南">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4"/>
+                        <path d="M12 8h.01"/>
+                    </svg>
+                </button>
+
+                <!-- 分隔线 -->
+                <div class="toolbar-divider"></div>
 
                 <!-- 主题选择 -->
                 <div class="theme-selector">
-                    <select id="themeSelector">
-                        <option value="default">白天模式</option>
-                        <option value="dark">黑夜模式</option>
-                        <option value="blue">蓝色模式</option>
+                    <button class="btn btn-icon" id="themeToggle" title="切换主题">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                    </button>
+                    <select id="themeSelector" class="theme-select">
+                        <option value="light">浅色</option>
+                        <option value="dark">深色</option>
+                        <option value="blue">蓝色</option>
                         <option value="cyberpunk">赛博朋克</option>
                     </select>
                 </div>
+
+                <!-- 设置按钮 -->
+                <button class="btn btn-icon" id="settingsBtn" title="设置">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6m4.22-10.22l4.24 4.24M6.34 6.34L2.1 2.1M22 12h-6m-6 0H1m15.66 6.66L2.1 2.1"/>
+                    </svg>
+                </button>
+
+                <!-- 更多选项 -->
+                <button class="btn btn-icon" id="moreOptions" title="更多选项">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                    </svg>
+                </button>
             </div>
         </header>
-        <main>
-            <div class="editor-container">
-                <textarea id="editor" placeholder="在此输入 Markdown 内容..."></textarea>
+        <!-- 主要内容区 -->
+        <main class="main-content">
+            <!-- 编辑器面板 -->
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                            <polyline points="14 2 14 9 21 9"/>
+                        </svg>
+                        <span>编辑器</span>
+                    </div>
+                    <div class="panel-actions">
+                        <button class="btn btn-sm" id="wordCountBtn">字数: 0</button>
+                    </div>
+                </div>
+                <div class="editor-content">
+                    <div class="editor-wrapper">
+                        <div class="line-numbers" id="lineNumbers"></div>
+                        <textarea id="editor" placeholder="开始输入 Markdown 内容..."></textarea>
+                    </div>
+                </div>
             </div>
-            <div class="preview-container">
-                <div id="preview" class="markdown-body"></div>
+
+            <!-- 分割线 -->
+            <div class="divider" id="divider"></div>
+
+            <!-- 预览面板 -->
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2" ry="2"/>
+                            <line x1="7" y1="7" x2="17" y2="7"/>
+                            <line x1="7" y1="12" x2="17" y2="12"/>
+                            <line x1="7" y1="17" x2="13" y2="17"/>
+                        </svg>
+                        <span>预览</span>
+                    </div>
+                    <div class="panel-actions">
+                        <button class="btn btn-sm" id="refreshPreviewBtn">刷新</button>
+                    </div>
+                </div>
+                <div class="preview-content">
+                    <div id="preview" class="markdown-body"></div>
+                </div>
             </div>
         </main>
+
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-info">
+                <div class="status-item">
+                    <span class="status-indicator"></span>
+                    <span>已自动保存</span>
+                </div>
+                <div class="status-item">
+                    <span>字数: <strong id="wordCount">0</strong></span>
+                </div>
+                <div class="status-item">
+                    <span>行数: <strong id="lineCount">1</strong></span>
+                </div>
+                <div class="status-item">
+                    <span>光标: <strong id="cursorPosition">1,1</strong></span>
+                </div>
+            </div>
+            <div class="status-actions">
+                <button class="btn btn-sm" id="clearBtn">清空</button>
+            </div>
+        </div>
     </div>
-    
     <!-- 依赖库 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    <!-- 设置面板 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">设置</h2>
+                <button class="modal-close" id="settingsCloseBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 字体设置 -->
+                <div class="settings-section">
+                    <h3 class="section-title">字体设置</h3>
+
+                    <div class="setting-item">
+                        <label class="setting-label">字体大小</label>
+                        <div class="setting-control">
+                            <input type="range" id="fontSizeSlider" min="12" max="24" value="16" step="1">
+                            <span id="fontSizeValue" class="setting-value">16px</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">字体选择</label>
+                        <div class="setting-control">
+                            <select id="fontFamilySelect" class="setting-select">
+                                <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                <option value="'Fira Code', monospace">Fira Code</option>
+                                <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                                <option value="'Consolas', monospace">Consolas</option>
+                                <option value="'Monaco', monospace">Monaco</option>
+                                <option value="'Courier New', monospace">Courier New</option>
+                                <option value="monospace">系统默认</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 背景图片设置 -->
+                <div class="settings-section">
+                    <h3 class="section-title">背景图片</h3>
+
+                    <div class="setting-item">
+                        <label class="setting-label">选择图片</label>
+                        <div class="setting-control">
+                            <input type="file" id="bgImageInput" accept="image/*" style="display: none;">
+                            <button id="bgImageBtn" class="btn btn-sm">选择图片</button>
+                            <button id="bgImageRemoveBtn" class="btn btn-sm btn-danger">移除</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">不透明度</label>
+                        <div class="setting-control">
+                            <input type="range" id="bgOpacitySlider" min="0" max="100" value="30" step="5">
+                            <span id="bgOpacityValue" class="setting-value">30%</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">显示模式</label>
+                        <div class="setting-control">
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="bgMode" value="stretch" checked>
+                                    <span class="radio-text">拉伸</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="bgMode" value="center">
+                                    <span class="radio-text">居中</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="bgMode" value="tile">
+                                    <span class="radio-text">平铺</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="settingsResetBtn" class="btn btn-danger">重置设置</button>
+                <button id="settingsSaveBtn" class="btn btn-primary">保存设置</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 主逻辑 -->
-    <script>
-        window.addEventListener('load', function () {
-            // --- DOM 元素获取 ---
-            const editor = document.getElementById('editor');
-            const preview = document.getElementById('preview');
-            const mainContainer = document.querySelector('main');
-
-            // 工具栏按钮
-            const saveBtn = document.getElementById('saveBtn');
-            const importBtn = document.getElementById('importBtn');
-            const exportBtn = document.getElementById('exportBtn');
-            const exportPdfBtn = document.getElementById('exportPdfBtn');
-            const toggleEditorBtn = document.getElementById('toggleEditorBtn');
-            const togglePreviewBtn = document.getElementById('togglePreviewBtn');
-            const mdGuideBtn = document.getElementById('mdGuideBtn');
-            const themeSelector = document.getElementById('themeSelector');
-            const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-            
-            // --- 状态变量 ---
-            let isShowingGuide = false;
-            let userContentBeforeGuide = '';
-
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = '.md,.markdown,text/markdown';
-            fileInput.style.display = 'none';
-            document.body.appendChild(fileInput);
-
-            marked.setOptions({ breaks: true, gfm: true, headerIds: true, sanitize: false });
-
-            // --- 核心功能 ---
-            function renderMarkdown(shouldSave = true) {
-                const markdownText = editor.value;
-                const htmlContent = marked.parse(markdownText);
-                preview.innerHTML = htmlContent;
-                if (shouldSave && !isShowingGuide) {
-                    localStorage.setItem('markdown-content', markdownText);
-                }
-            }
-            
-            function getFilename() {
-                const firstLine = editor.value.trim().split('\n')[0];
-                const sanitized = firstLine.replace(/[^a-zA-Z0-9\u4e00-\u9fa5\s]/g, '').trim();
-                return sanitized && sanitized.length > 0 ? sanitized : 'markdown-export';
-            }
-
-            // --- 初始化 ---
-            const savedContent = localStorage.getItem('markdown-content');
-            if (savedContent) editor.value = savedContent;
-            renderMarkdown(false);
-
-            const initialTheme = localStorage.getItem('markdown-theme') || 'default';
-            applyTheme(initialTheme);
-            themeSelector.value = initialTheme;
-            updateViewButtonsText();
-
-            // --- 事件监听器 ---
-            editor.addEventListener('input', () => {
-                if (isShowingGuide) {
-                    isShowingGuide = false;
-                    mdGuideBtn.textContent = 'Markdown 指南';
-                }
-                renderMarkdown(true);
-            });
-
-            saveBtn.addEventListener('click', () => {
-                localStorage.setItem('markdown-content', editor.value);
-                alert('内容已手动保存到本地存储！');
-            });
-
-            importBtn.addEventListener('click', () => fileInput.click());
-
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    editor.value = e.target.result;
-                    if (isShowingGuide) {
-                        isShowingGuide = false;
-                        mdGuideBtn.textContent = '返回编辑';
-                    }
-                    renderMarkdown(true);
-                };
-                reader.readAsText(file);
-                fileInput.value = '';
-            });
-
-            exportBtn.addEventListener('click', () => {
-                const blob = new Blob([editor.value], { type: 'text/markdown' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${getFilename()}.md`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
-            
-            exportPdfBtn.addEventListener('click', async () => {
-                const btn = exportPdfBtn;
-                btn.disabled = true;
-                btn.textContent = '正在生成...';
-                try {
-                    const element = document.getElementById('preview');
-                    const opt = {
-                        margin: 15,
-                        filename: `${getFilename()}.pdf`,
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2, useCORS: true },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                    };
-                    await html2pdf().from(element).set(opt).save();
-                } catch (error) {
-                    console.error("PDF导出失败:", error);
-                    alert("导出 PDF 时出错，请查看控制台获取更多信息。");
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = '导出 PDF';
-                }
-            });
-
-            // --- 视图切换功能 ---
-            function updateViewButtonsText() {
-                toggleEditorBtn.textContent = mainContainer.classList.contains('editor-hidden') ? '显示编辑区' : '隐藏编辑区';
-                togglePreviewBtn.textContent = mainContainer.classList.contains('preview-hidden') ? '显示预览区' : '隐藏预览区';
-                mdGuideBtn.textContent = isShowingGuide ? '返回编辑' : 'Markdown 指南';
-            }
-
-            toggleEditorBtn.addEventListener('click', function () {
-                mainContainer.classList.remove('preview-hidden');
-                mainContainer.classList.toggle('editor-hidden');
-                updateViewButtonsText();
-            });
-            
-            togglePreviewBtn.addEventListener('click', function () {
-                mainContainer.classList.remove('editor-hidden');
-                mainContainer.classList.toggle('preview-hidden');
-                updateViewButtonsText();
-            });
-
-            const markdownGuideContent = `...`; // 指南内容太长，为保持代码清爽此处省略，实际代码会包含完整内容。
-            mdGuideBtn.addEventListener('click', () => {
-                isShowingGuide = !isShowingGuide;
-                if (isShowingGuide) {
-                    userContentBeforeGuide = editor.value;
-                    editor.value = markdownGuideContent.replace('...', `
-# Markdown 语法指南
-
-这是一个 Markdown 格式的快速参考指南，您可以随时查看这个页面来学习 Markdown 的使用方法。
-
-## 基本语法
-
-### 标题
-
-\`\`\`
-# 一级标题
-## 二级标题
-### 三级标题
-#### 四级标题
-##### 五级标题
-###### 六级标题
-\`\`\`
-
-### 强调
-
-\`\`\`
-*斜体文本* 或 _斜体文本_
-**粗体文本** 或 __粗体文本__
-***粗斜体文本*** 或 ___粗斜体文本___
-\`\`\`
-
-### 列表
-
-无序列表：
-\`\`\`
-- 项目1
-- 项目2
-  - 子项目A
-  - 子项目B
-\`\`\`
-
-有序列表：
-\`\`\`
-1. 第一项
-2. 第二项
-3. 第三项
-\`\`\`
-
-### 链接
-
-\`\`\`
-[链接文本](https://www.example.com)
-\`\`\`
-
-### 图片
-
-\`\`\`
-![替代文本](图片URL)
-\`\`\`
-
-## 高级语法
-
-### 表格
-
-\`\`\`
-| 表头1 | 表头2 | 表头3 |
-| :--- | :---: | ---: |
-| 左对齐 | 居中对齐 | 右对齐 |
-| 单元格4 | 单元格5 | 单元格6 |
-\`\`\`
-
-### 代码块
-
-行内代码使用反引号 \`code\` 包裹。
-
-代码块使用三个反引号包裹：
-\`\`\`javascript
-function greet(name) {
-  console.log("Hello, " + name + "!");
-}
-greet('World');
-\`\`\`
-
-### 引用
-
-\`\`\`
-> 这是一段引用的文字。
->
-> > 引用可以嵌套。
-\`\`\`
-
-### 分隔线
-
-使用三个或更多的星号、破折号或下划线来创建分隔线。
-\`\`\`
-***
----
-___
-\`\`\`
-
-### 删除线
-
-\`\`\`
-~~这段文字将被划掉。~~
-\`\`\`
-`);
-                    renderMarkdown(false);
-                } else {
-                    editor.value = userContentBeforeGuide;
-                    renderMarkdown(true);
-                }
-                updateViewButtonsText();
-            });
-            
-            // --- 主题切换 ---
-            themeSelector.addEventListener('change', (e) => {
-                applyTheme(e.target.value);
-                localStorage.setItem('markdown-theme', e.target.value);
-            });
-
-            function applyTheme(theme) {
-                document.body.className = '';
-                document.body.classList.add(`theme-${theme}`);
-            }
-
-            // --- 下拉菜单交互逻辑 ---
-            function closeAllDropdowns() {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-            }
-
-            dropdownToggles.forEach(toggle => {
-                toggle.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                    const currentMenu = this.nextElementSibling;
-                    const isShown = currentMenu.classList.contains('show');
-                    closeAllDropdowns(); // Close others first
-                    if (!isShown) {
-                        currentMenu.classList.add('show');
-                    }
-                });
-            });
-
-            // Click outside to close dropdowns
-            window.addEventListener('click', function(event) {
-                if (!event.target.matches('.dropdown-toggle')) {
-                    closeAllDropdowns();
-                }
-            });
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

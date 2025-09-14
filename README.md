@@ -1,84 +1,188 @@
-# Simple MD Editor | 简洁 Markdown 编辑器
+# 📝 Markdown Editor - 现代化实时编辑器
 
-[![MIT License](https://img.shields.io/github/license/992939504/Simple-MD-Editor)](https://github.com/992939504/Simple-MD-Editor/blob/main/LICENSE)
-[![Live Demo](https://img.shields.io/github/deployments/992939504/Simple-MD-Editor/github-pages?label=Live%20Demo&style=flat-square)](https://992939504.github.io/Simple-MD-Editor/)
+一个功能强大的现代化 Markdown 编辑器，采用苹果风格设计，提供流畅的编辑体验和丰富的功能。
 
-一款轻量而强大的、基于浏览器的 Markdown 编辑器，使用纯 HTML、CSS 和 JavaScript 构建。它提供无缝的实时预览、多种主题以及丰富的导入/导出功能，无需任何后端即可在浏览器中直接运行。
+## ✨ 核心功能
 
-A lightweight yet powerful browser-based Markdown editor built with pure HTML, CSS, and JavaScript. It offers a seamless real-time preview, multiple themes, and various import/export options, all running directly in your browser without any backend.
+### 🎨 界面设计
+- **苹果风格设计**: 简洁、优雅的现代界面
+- **多主题支持**: 浅色、深色、蓝色、赛博朋克四种主题
+- **响应式布局**: 完美适配桌面和移动设备
+- **流畅动画**: 60fps 流畅的交互动画
+
+### 📝 编辑体验
+- **实时预览**: 左侧编辑，右侧即时显示渲染效果
+- **行号显示**: 便于定位和调试的行号功能
+- **实时统计**: 显示字数、行数、光标位置
+- **自动保存**: 内容自动保存到本地存储
+- **语法高亮**: 优雅的代码块语法高亮
+
+### 🛠️ 高级功能
+- **面板调整**: 可拖拽调整编辑器和预览面板大小
+- **面板切换**: 可独立隐藏/显示编辑器或预览面板
+- **背景图片**: 支持自定义背景图片，可调节透明度和显示模式
+- **字体设置**: 可调节字体大小（12px-24px）和字体类型
+- **键盘快捷键**: 丰富的快捷键提升编辑效率
+
+### 📤 文件操作
+- **文件导入**: 支持导入本地 Markdown 文件
+- **多格式导出**: 支持 Markdown、HTML 和 PDF 格式导出
+- **智能导出**: HTML 导出保持当前主题样式，适配移动端和打印
+- **文件管理**: 智能的文件命名和格式处理
+
+### 📚 学习支持
+- **Markdown 指南**: 内置完整的语法参考指南
+- **智能提示**: 友好的用户提示和错误处理
+- **帮助文档**: 详细的功能说明和使用指导
+
+## 🎯 快速开始
+
+### 基本操作
+1. **编辑内容**: 在左侧编辑区输入 Markdown 文本
+2. **查看预览**: 右侧实时显示渲染后的效果
+3. **保存内容**: 编辑器会自动保存，也可手动保存
+4. **导出文件**: 使用导出功能保存为不同格式（MD/HTML/PDF）
+
+### 高级功能
+- **调整布局**: 拖拽中间分割线调整面板大小
+- **更改主题**: 点击主题按钮切换界面风格
+- **设置字体**: 打开设置面板调整字体和背景
+- **快捷操作**: 使用键盘快捷键提升效率
+
+## ⌨️ 键盘快捷键
+
+### 编辑操作
+- `Ctrl/Cmd + S` - 保存内容
+- `Ctrl/Cmd + O` - 打开文件
+- `Ctrl/Cmd + E` - 导出 Markdown
+- `Ctrl/Cmd + Shift + E` - 导出 HTML
+- `Ctrl/Cmd + D` - 切换主题
+- `Ctrl/Cmd + ,` - 打开设置面板
+
+### 界面控制
+- `Ctrl/Cmd + /` - 显示/隐藏编辑器
+- `Ctrl/Cmd + .` - 显示/隐藏预览
+- `Ctrl/Cmd + 左右箭头` - 调整面板大小
+- `Ctrl/Cmd + Shift + 左右箭头` - 快速调整面板大小
+- `ESC` - 关闭弹窗或设置面板
+
+## 🎨 主题系统
+
+### 浅色主题
+- 清爽明亮的界面风格
+- 适合白天使用
+- 高对比度易于阅读
+
+### 深色主题
+- 护眼的深色界面
+- 适合夜间使用
+- 减少眼睛疲劳
+
+### 蓝色主题
+- 专业的蓝色调界面
+- 适合工作环境
+- 稳重且专业
+
+### 赛博朋克主题
+- 霓虹灯风格界面
+- 独特的视觉体验
+- 个性化选择
+
+## ⚙️ 设置功能
+
+### 字体设置
+- **字体大小**: 12px-24px 范围内自由调节
+- **字体类型**: 多种等宽字体选择
+- **实时预览**: 设置变更立即生效
+
+### 背景图片
+- **图片上传**: 支持多种图片格式
+- **透明度调节**: 0-100% 透明度控制
+- **显示模式**: 拉伸、居中、平铺三种模式
+- **智能管理**: 一键移除和更换
+
+## 📱 设备兼容性
+
+### 桌面端
+- Windows 10/11
+- macOS
+- Linux
+
+### 浏览器支持
+- Chrome 90+
+- Firefox 88+
+- Edge 90+
+- Safari 14+
+
+### 移动端
+- iOS Safari
+- Android Chrome
+- 响应式设计适配
+
+## 🔧 技术特性
+
+### 性能优化
+- **60fps 流畅拖拽**: 优化的分割线拖拽性能
+- **硬件加速**: GPU 加速渲染
+- **智能缓存**: 减少重复计算
+- **内存管理**: 完善的资源清理机制
+
+### 现代技术栈
+- **纯前端**: HTML + CSS + JavaScript
+- **Marked.js**: 强大的 Markdown 解析
+- **响应式设计**: CSS Grid + Flexbox
+- **现代 API**: 使用最新的浏览器 API
+- **智能导出**: 动态生成完整 HTML 页面，支持主题适配
+
+## 📦 安装和使用
+
+### 本地使用
+1. 下载项目文件
+2. 解压到本地目录
+3. 用浏览器打开 `index.html`
+4. 开始使用
+
+### 在线使用
+您也可以直接访问在线版本使用所有功能。
+
+## 🛡️ 隐私和安全
+
+- **本地存储**: 所有内容仅保存在浏览器本地
+- **无数据上传**: 不会上传任何个人信息
+- **开源透明**: 代码完全开源，可审查
+- **离线使用**: 支持完全离线使用
+
+## 🤝 贡献和反馈
+
+如果您有任何问题或建议，欢迎：
+- 提交 Issue 报告问题
+- 发起 Pull Request 贡献代码
+- 通过邮件联系开发者
+
+## 📄 许可证
+
+本项目采用 MIT 许可证，详情请查看 LICENSE 文件。
+
+## 🚀 更新日志
+
+### 最新版本功能
+- ✨ 新增设置面板，支持字体和背景自定义
+- 🎨 新增背景图片功能，支持多种显示模式
+- 🌐 新增 HTML 导出功能，生成完整独立的网页文件
+- ⚡ 优化分割线拖拽性能，实现 60fps 流畅体验
+- 🎹 新增键盘快捷键支持（包括 HTML 导出快捷键）
+- 📱 完善移动端适配
+- 🔧 性能优化和 Bug 修复
+
+### 计划功能
+- 🔍 搜索和替换功能
+- 📊 更多导出格式支持
+- 🎨 更多主题选择
+- 🔌 插件系统
+- ☁️ 云同步功能
 
 ---
 
-## 🚀 Live Demo | 在线体验
+**感谢使用 Markdown Editor！** 🎉
 
-**立即访问在线版本，无需安装，即开即用：**
-
-**[https://992939504.github.io/Simple-MD-Editor/](https://992939504.github.io/Simple-MD-Editor/)**
-
----
-
-## ✨ Features | 功能亮点
-
--   **📄 导出为 PDF (Export to PDF)**: 一键将您精心排版的文档导出为高质量的 PDF 文件，非常适合用于制作报告、简历或进行正式的分享。
--   **✍️ 实时预览 (Real-time Preview)**: 在您输入 Markdown 文本的同时，右侧会即时渲染出对应的 HTML 效果。
--   **🎨 多主题切换 (Multiple Themes)**: 内置多种精心设计的主题，满足不同场景和心情下的写作需求。
-    -   ✅ **白天模式 (Default)**
-    -   ✅ **黑夜模式 (Dark)**
-    -   ✅ **蓝色模式 (Blue)**
-    -   ✅ **赛博朋克 (Cyberpunk)**
--   **💾 本地持久化 (Local Persistence)**: 您的写作内容会自动保存到浏览器的本地存储中，刷新页面或下次访问时不会丢失。
--   **📂 文件导入/导出 (File Import/Export)**: 支持从本地导入 Markdown 文件，也可以将您的作品保存为 `.md` 文件。
--   **↔️ 响应式布局 (Responsive Layout)**: 简洁的设计能够自适应桌面和移动设备，随时随地进行创作。
--   **👁️ 视图切换 (View Toggling)**: 可以灵活地隐藏编辑区或预览区，以便专注于写作或审阅。
--   **📘 内置指南 (Built-in Guide)**: 集成了一个方便的 Markdown 语法指南，供您随时查阅。
--   **🧩 零依赖构建 (Zero Build Dependencies)**: 整个项目基于纯原生技术，仅通过 CDN 引入外部库，无需复杂的构建过程。
-
----
-
-## 🛠️ Technologies Used | 技术栈
-
--   **HTML5**: 负责页面的基本结构。
--   **CSS3**: 负责样式设计，使用 Flexbox 进行布局，并通过 CSS 变量（Variables）实现高效的主题切换。
--   **JavaScript (ES6+)**: 负责所有的交互逻辑、DOM 操作和功能实现。
--   **[Marked.js](https://marked.js.org/)**: 一个高性能的 Markdown 解析和编译器，用于将 Markdown 文本转换为 HTML。
--   **[html2pdf.js](https://github.com/eKoopmans/html2pdf.js)**: 用于将 HTML 预览内容生成并导出为 PDF 文档。
-
----
-
-## 📦 How to Use | 如何使用
-
-### 方法一：在线使用 (推荐)
-
-最简单的方式是直接在浏览器中打开 **[在线体验链接](https://992939504.github.io/Simple-MD-Editor/)**。
-
-### 方法二：本地运行
-
-由于这是一个纯静态项目，您可以在本地轻松运行它。
-
-1.  克隆或下载本仓库到您的本地计算机。
-    ```bash
-    git clone https://github.com/992939504/Simple-MD-Editor.git
-    ```
-2.  进入项目目录。
-    ```bash
-    cd Simple-MD-Editor
-    ```
-3.  在您喜欢的浏览器（如 Chrome, Firefox, Edge）中直接打开 `index.html` 文件即可。
-
----
-
-## 🤝 Contributing | 贡献
-
-欢迎任何形式的贡献！如果您有关于新功能、代码优化或 Bug 修复的想法，请随时 Fork 本仓库并提交 Pull Request。
-
-1.  **Fork** 本仓库。
-2.  创建您的功能分支 (`git checkout -b feature/AmazingFeature`)。
-3.  提交您的更改 (`git commit -m 'Add some AmazingFeature'`)。
-4.  将分支推送到您的 Fork 仓库 (`git push origin feature/AmazingFeature`)。
-5.  创建一个 **Pull Request**。
-
----
-
-## 📄 License | 许可证
-
-该项目采用 MIT 许可证。详情请参阅 [LICENSE](https://github.com/992939504/Simple-MD-Editor/blob/main/LICENSE) 文件。
+如果您觉得这个项目对您有帮助，请给个 ⭐️ 支持一下！
