@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveBtn = document.getElementById('saveBtn');
     const importBtn = document.getElementById('importBtn');
     const exportBtn = document.getElementById('exportBtn');
-    const exportHtmlBtn = document.getElementById('exportHtmlBtn');
     const exportPdfBtn = document.getElementById('exportPdfBtn');
     const toggleEditorBtn = document.getElementById('toggleEditorBtn');
     const togglePreviewBtn = document.getElementById('togglePreviewBtn');
@@ -24,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportToggle = document.getElementById('exportToggle');
     const themeToggle = document.getElementById('themeToggle');
     const moreOptions = document.getElementById('moreOptions');
+    const syncScrollBtn = document.getElementById('syncScrollBtn');
 
     // 主题选择器
     const themeSelector = document.getElementById('themeSelector');
@@ -42,6 +42,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let isShowingGuide = false;
     let userContentBeforeGuide = '';
     let currentTheme = 'light';
+    let isSyncScrollEnabled = false;
+    let syncScrollTimer = null;
+    let isScrollingFromEditor = false;
+    let isScrollingFromPreview = false;
+    let lineToElementMap = new Map();
+    let isBuildingMap = false; // 防止重复构建映射表
+    let mapBuildTimer = null;
 
     // 创建隐藏的文件输入元素
     const fileInput = document.createElement('input');
@@ -98,6 +105,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // 更新统计信息
             updateStats();
 
+            // 如果同步滚动开启，重新构建行号到元素的映射
+            if (isSyncScrollEnabled) {
+                // 使用防抖机制避免频繁重建映射
+                clearTimeout(mapBuildTimer);
+                mapBuildTimer = setTimeout(() => {
+                    buildLineToElementMap();
+                }, 100); // 100ms 防抖
+            }
+
             // 自动保存
             if (shouldSave && isAutoSaveEnabled && !isShowingGuide) {
                 scheduleAutoSave();
@@ -128,6 +144,326 @@ document.addEventListener('DOMContentLoaded', function() {
     function syncScroll() {
         const scrollTop = editor.scrollTop;
         lineNumbers.scrollTop = scrollTop;
+    }
+
+    // === 智能同步滚动系统 ===
+
+    // 构建行号到预览区元素的映射
+    function buildLineToElementMap() {
+        // 防止重复构建
+        if (isBuildingMap) {
+            console.log('⚠️ 映射表正在构建中，跳过重复构建');
+            return;
+        }
+
+        isBuildingMap = true;
+        console.log('🔧 构建行号到元素映射...');
+        lineToElementMap.clear();
+
+        try {
+            const markdownText = editor.value;
+            const lines = markdownText.split('\n');
+            let currentLineNumber = 1;
+
+            // 在预览区查找所有可映射的元素
+            const elements = preview.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, blockquote, pre, table, img');
+            console.log(`📍 找到 ${elements.length} 个可映射元素`);
+
+            elements.forEach((element, index) => {
+                // 根据元素类型估算对应的起始行号
+                let estimatedLine = estimateElementLine(element, markdownText, currentLineNumber);
+                if (estimatedLine > 0) {
+                    lineToElementMap.set(estimatedLine, element);
+                    currentLineNumber = estimatedLine;
+                }
+            });
+
+            console.log(`✅ 映射构建完成，共 ${lineToElementMap.size} 个映射关系`);
+        } finally {
+            isBuildingMap = false;
+        }
+    }
+
+    // 估算元素在源文本中的行号
+    function estimateElementLine(element, markdownText, lastKnownLine) {
+        const tagName = element.tagName.toLowerCase();
+        let searchText = '';
+
+        switch (tagName) {
+            case 'h1':
+            case 'h2':
+            case 'h3':
+            case 'h4':
+            case 'h5':
+            case 'h6':
+                searchText = element.textContent.trim();
+                // 查找对应的标题
+                const headerLevel = parseInt(tagName.charAt(1));
+                const headerPattern = '^#{' + headerLevel + '}\\s*' + escapeRegex(searchText) + '\\s*$';
+                const match = findLineFromPattern(markdownText, headerPattern, lastKnownLine);
+                return match;
+
+            case 'p':
+                searchText = element.textContent.trim().substring(0, 50);
+                return findLineContainingText(markdownText, searchText, lastKnownLine);
+
+            case 'li':
+                searchText = element.textContent.trim().substring(0, 30);
+                return findLineContainingText(markdownText, searchText, lastKnownLine);
+
+            case 'blockquote':
+                searchText = element.textContent.trim().substring(0, 30);
+                return findLineContainingText(markdownText, searchText, lastKnownLine);
+
+            case 'pre':
+                return findLineContainingText(markdownText, element.textContent.trim().substring(0, 30), lastKnownLine);
+
+            case 'img':
+                searchText = element.alt || '';
+                return findLineContainingText(markdownText, searchText, lastKnownLine);
+
+            default:
+                return lastKnownLine + 1;
+        }
+    }
+
+    // 查找匹配模式的行号
+    function findLineFromPattern(text, pattern, startLine) {
+        const lines = text.split('\n');
+        const regex = new RegExp(pattern, 'm');
+
+        for (let i = startLine - 1; i < lines.length; i++) {
+            if (regex.test(lines[i])) {
+                return i + 1;
+            }
+        }
+        return startLine;
+    }
+
+    // 查找包含指定文本的行号
+    function findLineContainingText(text, searchText, startLine) {
+        if (!searchText) return startLine;
+
+        const lines = text.split('\n');
+        const escapedSearchText = escapeRegex(searchText.substring(0, 50));
+
+        for (let i = startLine - 1; i < lines.length; i++) {
+            if (lines[i].includes(searchText)) {
+                return i + 1;
+            }
+        }
+        return startLine + 1;
+    }
+
+    // 转义正则表达式特殊字符
+    function escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // 智能同步滚动：编辑器到预览区
+    function syncEditorToPreview() {
+        if (!isSyncScrollEnabled || isScrollingFromPreview) return;
+
+        clearTimeout(syncScrollTimer);
+        syncScrollTimer = setTimeout(() => {
+            performEditorToPreviewSync();
+        }, 10); // 缩短防抖时间到10ms，实现即时同步
+    }
+
+    // 执行编辑器到预览区的同步
+    function performEditorToPreviewSync() {
+        isScrollingFromEditor = true;
+
+        try {
+            const previewContent = document.querySelector('.preview-content');
+            if (!previewContent) {
+                console.error('❌ 找不到预览区滚动容器');
+                return;
+            }
+
+            const editorLines = editor.value.split('\n');
+            const currentScrollLine = calculateCurrentScrollLine(editor, editorLines);
+            console.log(`📝 编辑器滚动: 当前在第${currentScrollLine}行`);
+
+            const targetElement = findBestMatchElement(currentScrollLine);
+
+            if (targetElement) {
+                console.log(`🎯 找到目标元素: ${targetElement.tagName}`);
+                const elementRect = targetElement.getBoundingClientRect();
+                const previewRect = previewContent.getBoundingClientRect();
+                const relativeTop = elementRect.top - previewRect.top;
+                const targetScrollTop = previewContent.scrollTop + relativeTop - 100;
+
+                console.log(`📐 计算结果: 相对位置${relativeTop}px, 目标滚动${targetScrollTop}px`);
+
+                // 即时滚动到目标位置（移除平滑滚动，避免冲突）
+                previewContent.scrollTo({
+                    top: targetScrollTop
+                });
+            } else {
+                console.log('⚠️ 未找到匹配的目标元素，保持当前位置不变');
+                // 保持当前位置不变，什么都不做
+            }
+        } catch (error) {
+            console.warn('编辑器到预览区同步失败:', error);
+        } finally {
+            setTimeout(() => {
+                isScrollingFromEditor = false;
+            }, 100);
+        }
+    }
+
+    // 计算当前滚动位置对应的行号
+    function calculateCurrentScrollLine(textarea, lines) {
+        const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
+        const paddingTop = parseFloat(getComputedStyle(textarea).paddingTop);
+        const scrollTop = textarea.scrollTop;
+        const currentPixelPosition = scrollTop + paddingTop;
+
+        const currentLine = Math.round(currentPixelPosition / lineHeight);
+        return Math.max(1, Math.min(lines.length, currentLine));
+    }
+
+    // 查找最佳匹配的预览区元素
+    function findBestMatchElement(currentLine) {
+        // 查找最接近的目标元素
+        let bestElement = null;
+        let bestLineDiff = Infinity;
+        let bestLineNumber = 0;
+
+        for (const [lineNumber, element] of lineToElementMap) {
+            const lineDiff = Math.abs(lineNumber - currentLine);
+            if (lineDiff < bestLineDiff) {
+                bestLineDiff = lineDiff;
+                bestElement = element;
+                bestLineNumber = lineNumber;
+            }
+        }
+
+        // 如果距离太远，返回null
+        if (bestLineDiff > 10) { // 允许10行的误差
+            return null;
+        }
+
+        return bestElement;
+    }
+
+    // 智能同步滚动：预览区到编辑器
+    function syncPreviewToEditor() {
+        if (!isSyncScrollEnabled || isScrollingFromEditor) return;
+
+        clearTimeout(syncScrollTimer);
+        syncScrollTimer = setTimeout(() => {
+            performPreviewToEditorSync();
+        }, 10); // 同样缩短防抖时间到10ms
+    }
+
+    // 执行预览区到编辑器的同步
+    function performPreviewToEditorSync() {
+        isScrollingFromPreview = true;
+
+        try {
+            const previewContent = document.querySelector('.preview-content');
+            if (!previewContent) {
+                console.error('❌ 找不到预览区滚动容器');
+                return;
+            }
+
+            const scrollPosition = previewContent.scrollTop;
+            console.log(`👀 预览区滚动: 位置 ${scrollPosition}px`);
+
+            const elements = preview.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, blockquote, pre, table, img');
+            console.log(`🔍 查找匹配元素: 共 ${elements.length} 个`);
+
+            let bestElement = null;
+            let bestDistance = Infinity;
+
+            // 查找最接近当前滚动位置的元素
+            elements.forEach(element => {
+                const rect = element.getBoundingClientRect();
+                const previewRect = previewContent.getBoundingClientRect();
+                const relativeTop = rect.top - previewRect.top + scrollPosition;
+                const distance = Math.abs(relativeTop - scrollPosition);
+
+                if (distance < bestDistance && distance < 200) { // 200px 容差
+                    bestDistance = distance;
+                    bestElement = element;
+                }
+            });
+
+            if (bestElement) {
+                console.log(`🎯 匹配到元素: ${bestElement.tagName}，距离: ${bestDistance}px`);
+                // 找到对应的行号并滚动编辑器
+                const targetLine = findElementLineNumber(bestElement);
+                if (targetLine > 0) {
+                    scrollToEditorLine(targetLine);
+                } else {
+                    console.log('⚠️ 未找到对应的行号，保持编辑器当前位置不变');
+                    // 保持当前位置不变，什么都不做
+                }
+            } else {
+                console.log('⚠️ 未找到匹配的元素，保持编辑器当前位置不变');
+                // 保持当前位置不变，什么都不做
+            }
+        } catch (error) {
+            console.warn('预览区到编辑器同步失败:', error);
+        } finally {
+            setTimeout(() => {
+                isScrollingFromPreview = false;
+            }, 100);
+        }
+    }
+
+    // 查找元素对应的行号
+    function findElementLineNumber(targetElement) {
+        for (const [lineNumber, element] of lineToElementMap) {
+            if (element === targetElement) {
+                return lineNumber;
+            }
+        }
+        return 0;
+    }
+
+    // 滚动编辑器到指定行
+    function scrollToEditorLine(lineNumber) {
+        const lineHeight = parseFloat(getComputedStyle(editor).lineHeight);
+        const paddingTop = parseFloat(getComputedStyle(editor).paddingTop);
+        const targetScrollTop = (lineNumber - 1) * lineHeight - paddingTop;
+
+        // 即时滚动到目标位置（移除平滑滚动，避免冲突）
+        editor.scrollTo({
+            top: Math.max(0, targetScrollTop)
+        });
+    }
+
+    // 切换同步滚动功能
+    function toggleSyncScroll() {
+        isSyncScrollEnabled = !isSyncScrollEnabled;
+        console.log(`🔄 切换同步滚动: ${isSyncScrollEnabled ? '开启' : '关闭'}`);
+
+        if (isSyncScrollEnabled) {
+            syncScrollBtn.classList.add('active');
+            buildLineToElementMap(); // 重新构建映射
+            console.log(`🎯 同步滚动已开启，映射表大小: ${lineToElementMap.size}`);
+            showNotification('同步滚动已开启', 'success');
+        } else {
+            syncScrollBtn.classList.remove('active');
+            lineToElementMap.clear(); // 清空映射
+            console.log('⭕ 同步滚动已关闭，映射表已清空');
+            showNotification('同步滚动已关闭', 'info');
+        }
+
+        // 保存同步滚动状态
+        localStorage.setItem('markdown-sync-scroll', isSyncScrollEnabled.toString());
+    }
+
+    // 加载同步滚动状态
+    function loadSyncScrollState() {
+        const savedState = localStorage.getItem('markdown-sync-scroll');
+        if (savedState === 'true') {
+            isSyncScrollEnabled = true;
+            syncScrollBtn.classList.add('active');
+        }
     }
 
     // 更新统计信息
@@ -244,11 +580,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // 编辑器滚动事件
-    editor.addEventListener('scroll', syncScroll);
+    editor.addEventListener('scroll', () => {
+        syncScroll();
+        syncEditorToPreview();
+    });
 
     // 编辑器光标位置变化事件
     editor.addEventListener('mouseup', updateStats);
     editor.addEventListener('keyup', updateStats);
+
+    // 预览区滚动事件 - 绑定到实际可滚动的容器
+    const previewContent = document.querySelector('.preview-content');
+    if (previewContent) {
+        previewContent.addEventListener('scroll', syncPreviewToEditor);
+        console.log('✅ 预览区滚动事件已绑定到 .preview-content');
+    } else {
+        console.error('❌ 找不到 .preview-content 元素');
+    }
+
+    // 同步滚动按钮事件
+    syncScrollBtn.addEventListener('click', toggleSyncScroll);
 
     // 保存按钮
     saveBtn.addEventListener('click', () => {
@@ -308,46 +659,6 @@ document.addEventListener('DOMContentLoaded', function() {
             closeAllDropdowns();
         } catch (error) {
             showNotification('导出失败', 'error');
-        }
-    });
-
-    // 导出 HTML
-    exportHtmlBtn.addEventListener('click', () => {
-        try {
-            const markdownText = editor.value;
-            let htmlContent = '';
-
-            // 解析 Markdown 为 HTML
-            if (typeof marked !== 'undefined') {
-                htmlContent = marked.parse(markdownText);
-            } else {
-                // 如果 marked 未加载，使用简单的文本显示
-                htmlContent = `<pre>${markdownText}</pre>`;
-            }
-
-            // 创建完整的 HTML 页面
-            const fullHtml = generateHtmlPage(htmlContent, getFilename());
-
-            // 创建并下载文件
-            const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${getFilename()}.html`;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-
-            showNotification('HTML 文件导出成功', 'success');
-            closeAllDropdowns();
-        } catch (error) {
-            console.error('HTML导出失败:', error);
-            showNotification('HTML导出失败', 'error');
         }
     });
 
@@ -773,16 +1084,10 @@ document.addEventListener('DOMContentLoaded', function() {
             importBtn.click();
         }
 
-        // Ctrl/Cmd + E: 导出 Markdown
+        // Ctrl/Cmd + E: 导出
         if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
             e.preventDefault();
             exportBtn.click();
-        }
-
-        // Ctrl/Cmd + Shift + E: 导出 HTML
-        if ((e.ctrlKey || e.metaKey) && e.key === 'E') {
-            e.preventDefault();
-            exportHtmlBtn.click();
         }
 
         // Ctrl/Cmd + D: 切换主题
@@ -803,231 +1108,18 @@ document.addEventListener('DOMContentLoaded', function() {
             togglePreviewBtn.click();
         }
 
+        // Ctrl/Cmd + R: 切换同步滚动
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            toggleSyncScroll();
+        }
+
         // 面板大小调整快捷键 (已由handlePanelResizeKeyboard处理)
         // Ctrl/Cmd + Left/Right Arrow: 调整面板大小
         // Ctrl/Cmd + Shift + Left/Right Arrow: 快速调整面板大小
     });
 
     // === 工具函数 ===
-
-    // 生成完整 HTML 页面
-    function generateHtmlPage(content, title) {
-        const currentTheme = document.body.className;
-        const isDark = currentTheme.includes('dark');
-
-        return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
-            line-height: 1.6;
-            color: ${isDark ? '#f5f5f7' : '#1d1d1f'};
-            background-color: ${isDark ? '#000000' : '#ffffff'};
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .container {
-            background-color: ${isDark ? '#1c1c1e' : '#ffffff'};
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .header {
-            border-bottom: 1px solid ${isDark ? '#38383a' : '#d2d2d7'};
-            padding-bottom: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: ${isDark ? '#f5f5f7' : '#1d1d1f'};
-        }
-
-        .header .meta {
-            color: ${isDark ? '#86868b' : '#86868b'};
-            font-size: 0.9rem;
-        }
-
-        .content {
-            line-height: 1.8;
-        }
-
-        .content h1,
-        .content h2,
-        .content h3,
-        .content h4,
-        .content h5,
-        .content h6 {
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        .content h1 { font-size: 2rem; }
-        .content h2 { font-size: 1.5rem; }
-        .content h3 { font-size: 1.25rem; }
-        .content h4 { font-size: 1rem; }
-
-        .content p {
-            margin-bottom: 1rem;
-        }
-
-        .content ul,
-        .content ol {
-            margin-bottom: 1rem;
-            padding-left: 2rem;
-        }
-
-        .content li {
-            margin-bottom: 0.5rem;
-        }
-
-        .content blockquote {
-            border-left: 4px solid #0071e3;
-            margin: 1rem 0;
-            padding: 1rem;
-            background-color: ${isDark ? 'rgba(0, 113, 227, 0.1)' : 'rgba(0, 113, 227, 0.05)'};
-            border-radius: 0 8px 8px 0;
-        }
-
-        .content code {
-            background-color: ${isDark ? '#38383a' : '#f5f5f7'};
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace;
-            font-size: 0.9rem;
-        }
-
-        .content pre {
-            background-color: ${isDark ? '#38383a' : '#f5f5f7'};
-            padding: 1.5rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 1rem 0;
-            border: 1px solid ${isDark ? '#48484a' : '#e5e5e7'};
-        }
-
-        .content pre code {
-            background: none;
-            padding: 0;
-            border: none;
-        }
-
-        .content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-
-        .content th,
-        .content td {
-            border: 1px solid ${isDark ? '#38383a' : '#d2d2d7'};
-            padding: 0.75rem;
-            text-align: left;
-        }
-
-        .content th {
-            background-color: ${isDark ? '#2c2c2e' : '#f9f9f9'};
-            font-weight: 600;
-        }
-
-        .content a {
-            color: #0071e3;
-            text-decoration: none;
-        }
-
-        .content a:hover {
-            text-decoration: underline;
-        }
-
-        .content img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .content hr {
-            border: none;
-            border-top: 1px solid ${isDark ? '#38383a' : '#d2d2d7'};
-            margin: 2rem 0;
-        }
-
-        .footer {
-            text-align: center;
-            color: ${isDark ? '#86868b' : '#86868b'};
-            font-size: 0.8rem;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid ${isDark ? '#38383a' : '#d2d2d7'};
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-
-            .container {
-                padding: 1.5rem;
-            }
-
-            .header h1 {
-                font-size: 1.5rem;
-            }
-        }
-
-        @media print {
-            body {
-                background: white;
-                color: black;
-                max-width: none;
-                margin: 0;
-                padding: 0;
-            }
-
-            .container {
-                box-shadow: none;
-                padding: 0;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>${title}</h1>
-            <div class="meta">
-                由 Markdown Editor 生成 |
-                生成时间: ${new Date().toLocaleString('zh-CN')}
-            </div>
-        </div>
-        <div class="content">
-            ${content}
-        </div>
-        <div class="footer">
-            <p>此文档由 <strong>Markdown Editor</strong> 生成</p>
-            <p>一个现代化的实时 Markdown 编辑器</p>
-        </div>
-    </div>
-</body>
-</html>`;
-    }
 
     // 获取 SVG 图标
     function getIconSVG(type) {
@@ -1195,7 +1287,8 @@ email@example.com
 4. **主题切换：** 点击右上角的主题按钮可以切换不同的界面主题
 5. **拖拽调整：** 拖拽中间的分割线可以调整编辑器和预览区的宽度
 6. **键盘调整：** 使用 Ctrl/Cmd + 左右箭头键精确调整面板大小
-7. **触摸支持：** 支持触摸设备的分割线拖拽操作
+7. **同步滚动：** 点击同步滚动按钮或使用 Ctrl/Cmd + R 启用编辑器和预览区同步滚动
+8. **触摸支持：** 支持触摸设备的分割线拖拽操作
 
 ## 常见问题
 
@@ -1241,6 +1334,7 @@ A: 使用 \`|\` 分隔单元格，第二行用 \`-\` 和 \`:\` 控制对齐方�
 - ⌨️ **快捷键支持** - 提高编辑效率
 - 📤 **多格式导出** - 支持 Markdown 和 PDF 导出
 - 🎯 **行号显示** - 便于定位和调试
+- 🔄 **智能同步滚动** - 编辑器和预览区双向同步
 
 ## 🚀 快速开始
 
@@ -1257,6 +1351,7 @@ A: 使用 \`|\` 分隔单元格，第二行用 \`-\` 和 \`:\` 控制对齐方�
 - \`Ctrl/Cmd + D\` - 切换主题
 - \`Ctrl/Cmd + /\` - 显示/隐藏编辑器
 - \`Ctrl/Cmd + .\` - 显示/隐藏预览
+- \`Ctrl/Cmd + R\` - 切换同步滚动
 - \`Ctrl/Cmd + ←/→\` - 调整面板大小
 - \`Ctrl/Cmd + Shift + ←/→\` - 快速调整面板大小
 
@@ -1274,6 +1369,7 @@ A: 使用 \`|\` 分隔单元格，第二行用 \`-\` 和 \`:\` 控制对齐方�
     function initializeApp() {
         initializeTheme();
         initializeContent();
+        loadSyncScrollState();
 
         // 初始化设置
         if (typeof initializeSettings === 'function') {

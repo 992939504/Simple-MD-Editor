@@ -323,6 +323,18 @@ body {
     height: 100px;
 }
 
+/* 同步滚动按钮激活状态 */
+#syncScrollBtn.active {
+    background: var(--accent-color) !important;
+    color: white !important;
+    box-shadow: 0 0 8px rgba(0, 113, 227, 0.3);
+}
+
+#syncScrollBtn.active:hover {
+    background: var(--accent-hover) !important;
+    transform: translateY(-1px);
+}
+
 /* === 下拉菜单 === */
 .dropdown {
     position: relative;
@@ -463,6 +475,11 @@ body {
     flex: 1;
     overflow: hidden;
     position: relative;
+}
+
+/* 修复：为预览区启用滚动 */
+.preview-content {
+    overflow-y: auto;
 }
 
 .editor-wrapper {
